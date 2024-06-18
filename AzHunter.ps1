@@ -242,29 +242,58 @@ Function findWebAppConnectionStrings{
 
     $webAppResourceId = $webApp.Id
 
-    $envURI = "https://management.azure.com$webAppResourceId/config/appsettings/list?api-version=2021-02-01"
-    $conectionStringURI = "https://management.azure.com$webAppResourceId/config/connectionstrings/list?api-version=2021-02-01"
+    # Check role assignments for the current user at the web app level
+    $roleAssignments = Get-AzRoleAssignment -ObjectId $userObjectId -Scope $webAppResourceId
 
-    $envHttpResponse = managementApiHttpRequest -URI $envURI -method "POST"
-    $conectionStringHttpResponse = managementApiHttpRequest -URI $conectionStringURI -method "POST"
+    # Check if the user has a role that allows access to connection strings
+    $hasPermission = $false
 
-    # Display environment variables if they exist
-    if ($envHttpResponse.properties) {
-        Write-Host "[+] Environment Variable(s) (App Settings) found ! some credentials may be stored in this variables" -ForegroundColor Green
-        $envHttpResponse.properties
-    } else {
-        Write-Host "[-] No environment variables found in App Settings." -ForegroundColor DarkYellow
+    # Check if the roles assigned have the necessary permissions
+    $requiredActions = @(
+        "Microsoft.Web/sites/config/list/action",
+        "Microsoft.Web/sites/config/write",
+        "Microsoft.Web/sites/*"
+        )
+
+    foreach ($roleAssignment in $roleAssignments) {
+        $roleDefinition = Get-AzRoleDefinition -Id $roleAssignment.RoleDefinitionId
+        foreach ($action in $requiredActions) {
+            if ($roleDefinition.Actions -contains $action) {
+                $hasPermission = $true
+                break
+            }
+        }
     }
+    # If user have sufficient permission, check env var and connection strings
+    if ($hasPermission) {
+        Write-Host "[+] User has the required permissions to access connection strings and env variables." -ForegroundColor Green
 
-    if ($conectionStringHttpResponse.properties) {
-        # Display connection strings if exist
-        Write-Host "[+] Connection string(s) found ! some credentials may be stored in this variables" -ForegroundColor Green
-        $conectionStringHttpResponse.properties
+        $envURI = "https://management.azure.com$webAppResourceId/config/appsettings/list?api-version=2021-02-01"
+        $conectionStringURI = "https://management.azure.com$webAppResourceId/config/connectionstrings/list?api-version=2021-02-01"
+
+        $envHttpResponse = managementApiHttpRequest -URI $envURI -method "POST"
+        $conectionStringHttpResponse = managementApiHttpRequest -URI $conectionStringURI -method "POST"
+
+
+        # Display environment variables if they exist
+        if ($envHttpResponse.properties) {
+            Write-Host "[+] Environment Variable(s) (App Settings) found ! some credentials may be stored in this variables" -ForegroundColor Green
+            $envHttpResponse.properties
+        } else {
+            Write-Host "[-] No environment variables found in App Settings." -ForegroundColor DarkYellow
+        }
+
+        if ($conectionStringHttpResponse.properties) {
+            # Display connection strings if exist
+            Write-Host "[+] Connection string(s) found ! some credentials may be stored in this variables" -ForegroundColor Green
+            $conectionStringHttpResponse.properties
+        } else {
+            Write-Host "[-] No connection strings found." -ForegroundColor DarkYellow
+        }
     } else {
-        Write-Host "[-] No connection strings found." -ForegroundColor DarkYellow
-    }   
+        Write-Host "[-] The current user does NOT have the required permissions to access connection strings and env variables." -ForegroundColor DarkYellow
+    }
 }
-
 
 Function enumStorageAccounts{
     Write-Host "[*] Enumeration of Storage Accounts`r`n" -ForegroundColor Green
@@ -297,9 +326,8 @@ Function managementApiHttpRequest{
 
     try{
         $response = Invoke-RestMethod @RequestParams 
-        Write-Output "res : $response"
     } catch {
-    Write-Output "Error fetching app settings: $_"
+        Write-Output "Error fetching app settings: $_"
     }
 
     return $response
@@ -372,10 +400,11 @@ foreach ($subscription in $subscriptions) {
      
     Set-AzContext -SubscriptionId $subscriptionId
 
+    enumAppServices
+
+
     Find-Resources-Groups
     Find-Resources
-
-    enumAppServices
     
 
 }
