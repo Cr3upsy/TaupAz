@@ -245,25 +245,16 @@ Function findWebAppConnectionStrings{
     # Check role assignments for the current user at the web app level
     $roleAssignments = Get-AzRoleAssignment -ObjectId $userObjectId -Scope $webAppResourceId
 
-    # Check if the user has a role that allows access to connection strings
-    $hasPermission = $false
-
-    # Check if the roles assigned have the necessary permissions
+    # List of required action to access secrets
     $requiredActions = @(
         "Microsoft.Web/sites/config/list/action",
         "Microsoft.Web/sites/config/write",
         "Microsoft.Web/sites/*"
         )
 
-    foreach ($roleAssignment in $roleAssignments) {
-        $roleDefinition = Get-AzRoleDefinition -Id $roleAssignment.RoleDefinitionId
-        foreach ($action in $requiredActions) {
-            if ($roleDefinition.Actions -contains $action) {
-                $hasPermission = $true
-                break
-            }
-        }
-    }
+    # Check if the user has a role that allows access to connection strings
+    $hasPermission = checkPermission -permissions $requiredActions -roleAssignments $roleAssignments
+
     # If user have sufficient permission, check env var and connection strings
     if ($hasPermission) {
         Write-Host "[+] User has the required permissions to access connection strings and env variables." -ForegroundColor Green
@@ -305,6 +296,27 @@ Function enumFunctionApps{
     Write-Host "[*] Enumeration of function apps`r`n" -ForegroundColor Green
     Get-AzFunctionApp
 
+}
+
+Function checkPermission{
+    param (
+        [array]$permissions,
+        [psobject]$roleAssignments
+        )
+
+    $hasPermission = $false
+
+    foreach ($roleAssignment in $roleAssignments) {
+        $roleDefinition = Get-AzRoleDefinition -Id $roleAssignment.RoleDefinitionId
+        foreach ($action in $requiredActions) {
+            if ($roleDefinition.Actions -contains $action) {
+                $hasPermission = $true
+                break
+            }
+        }
+    }
+
+    return $hasPermission
 }
 
 Function managementApiHttpRequest{
@@ -400,11 +412,11 @@ foreach ($subscription in $subscriptions) {
      
     Set-AzContext -SubscriptionId $subscriptionId
 
-    enumAppServices
-
 
     Find-Resources-Groups
     Find-Resources
+
+    enumAppServices
     
 
 }
