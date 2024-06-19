@@ -191,6 +191,7 @@ Function enumAppServices{
             Write-Host "[*]Checking web app: $($webApp.Name)"
                 findWebAppGitCreds -webApp $webApp
                 findWebAppConnectionStrings -webApp $webApp
+                checkWebAppSSH -webApp $webApp
             
         }
                 
@@ -283,6 +284,32 @@ Function findWebAppConnectionStrings{
         }
     } else {
         Write-Host "[-] The current user does NOT have the required permissions to access connection strings and env variables." -ForegroundColor DarkYellow
+    }
+}
+
+Function checkWebAppSSH{
+    param (
+        [psobject]$webApp
+    )
+
+    $requiredActions = @(
+        "Microsoft.Web/sites/ssh/action",
+        "Microsoft.Web/sites/*"
+    )
+
+    # Get role assignments for the user on the web app resource
+    $roleAssignments = Get-AzRoleAssignment -ObjectId $userObjectId -Scope $webApp.Id
+
+    # Check if the user has a role that allows access to connection strings
+    $hasPermission = checkPermission -permissions $requiredActions -roleAssignments $roleAssignments
+
+    # Output the result
+    if ($hasPermission) {
+        Write-Host "[+] User has the necessary permissions to create an SSH session on the web app."`r`n -ForegroundColor Green
+        Write-Host "[*] If the app service is up and have been deployed through direct code and NOT as docker container, you can try to open SSH session with az cli :"
+        Write-Host "    - az webapp create-remote-connection --resource-group <resourceGroup> --name $webAppName" 
+    } else {
+        Write-Host "[-] User does not have the necessary permissions to create an SSH session on the web app service." -ForegroundColor DarkYellow
     }
 }
 
