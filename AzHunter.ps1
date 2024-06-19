@@ -248,6 +248,7 @@ Function findWebAppConnectionStrings{
 
     # List of required action to access secrets
     $requiredActions = @(
+        "*",
         "Microsoft.Web/sites/config/list/action",
         "Microsoft.Web/sites/config/write",
         "Microsoft.Web/sites/*"
@@ -293,6 +294,7 @@ Function checkWebAppSSH{
     )
 
     $requiredActions = @(
+        "*",
         "Microsoft.Web/sites/ssh/action",
         "Microsoft.Web/sites/*"
     )
@@ -315,7 +317,29 @@ Function checkWebAppSSH{
 
 Function enumStorageAccounts{
     Write-Host "[*] Enumeration of Storage Accounts`r`n" -ForegroundColor Green
-    Get-AzStorageAccount
+
+    #Get storage accounts
+    $storageAccounts = Get-AzStorageAccount
+    if ($null -eq $storageAccount) {
+        Write-Host "[-] No storage account accessible for the current user found`r`n" -ForegroundColor DarkYellow
+    }
+    else{
+        Write-Host "[+] Storage account(s) found" -ForegroundColor Green
+        Write-Host "$($storageAccounts.StorageAccountName)`r`n"
+
+
+        foreach ($storageAccount in $storageAccounts) {
+            Write-Host "[*]Checking storage account : $($storageAccount.StorageAccountName)`r`n"
+
+            Write-Host "[*] We found the following blob endpoint URL :"
+            $blobEndpoint = $storageAccount.Context.BlobEndPoint
+            Write-Host "$blobEndpoint`r`n"
+
+            findBlobs -storageAccount $storageAccount
+            
+        }
+                
+    }
 
 }
 
@@ -323,6 +347,76 @@ Function enumFunctionApps{
     Write-Host "[*] Enumeration of function apps`r`n" -ForegroundColor Green
     Get-AzFunctionApp
 
+}
+
+Function findBlobs{
+    param (
+        [psobject]$storageAccount
+    )
+    $requiredActions = @(
+        "*",
+        "Microsoft.Storage/storageAccounts/*",
+        "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+        "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"
+    )
+
+    # Get role assignments for the user on the web app resource
+    $roleAssignments = Get-AzRoleAssignment -ObjectId $userObjectId -Scope $storageAccount.Id
+
+    # Check if the user has a role that allows access to connection strings
+    $hasPermission = checkPermission -permissions $requiredActions -roleAssignments $roleAssignments
+
+    # Output the result
+    if ($hasPermission) {
+        Write-Host "[+] User has the necessary permissions to check the content of the Az storage accounts."`r`n -ForegroundColor Green
+        $storageContext = $storageAccount.Context
+        # List containers in the storage account
+        $containers = Get-AzStorageContainer -Context $storageContext
+
+        if($containers){
+            Write-Host "[*] Some containers found"
+            foreach ($container in $containers) {
+                Write-Host "`r`n[+] Checking container: $($container.Name)`r`n" -ForegroundColor Green
+
+                readBlobs -container $container -StorageContext $storageContext
+            }
+            Write-Host "`r`n[*] All the blobs resources found have been dowloaded to the following directory : .\$($subscriptionId)_Az_Blob_Content"
+        }else{
+            Write-Host "[-] No containers found"
+        }
+
+    } else {
+        Write-Host "[-] User does not have the necessary permissions to access the content of the storage account." -ForegroundColor DarkYellow
+    }
+
+}
+
+Function readBlobs{
+    param (
+        [psobject]$container,
+        [psobject]$storageContext
+    )
+
+    # List blobs in the container
+    $blobs = Get-AzStorageBlob -Container $container.Name -Context $storageContext
+    
+    $download = $false
+
+
+    if($blobs){
+        Write-Host "[*] We found the following resources in this container :"
+        #Create directory to store the blob content found
+        if (!(Test-Path -Path .\$($subscriptionId)_Az_Blob_Content)) {
+             $blobDir = New-Item -Path .\$($subscriptionId)_Az_Blob_Content -ItemType Directory
+        }
+        foreach ($blob in $blobs) {
+            Write-Host "[+] $($blob.Name)" -ForegroundColor Green
+            # Read blob content and DL
+            $blobContent = Get-AzStorageBlobContent -Blob $blob.Name -Container $container.Name -Context $storageContext -Destination .\$($subscriptionId)_Az_Blob_Content\$($blob.Name)
+        }
+    } else{
+        Write-Host "[-] No blobs found"
+    }
 }
 
 Function checkPermission{
@@ -439,6 +533,7 @@ foreach ($subscription in $subscriptions) {
      
     Set-AzContext -SubscriptionId $subscriptionId
 
+    enumStorageAccounts
 
     Find-Resources-Groups
     Find-Resources
