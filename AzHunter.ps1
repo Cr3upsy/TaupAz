@@ -41,7 +41,7 @@ function Find-Resources-Groups {
         Write-Host "[+]Role Assignments:`r`n" -ForegroundColor Green
 
         Write-Host "----"
-        $userRoleAssignments
+        Write-Host "$userRoleAssignments"
         Write-Host "----"
     
         # Check if the user has a privileged administrator role on the group
@@ -81,78 +81,79 @@ function Find-Resources-Groups {
 
 
 function Find-Resources {
-try {
 
-    $rolesDict = @{}
-    $actionsDict = @{}
+    try {
 
-    $resources = Get-AzResource
-    
-    if ($null -eq $resources) {
-        Write-Host "[-] No resources found for the current user `r`n" -ForegroundColor DarkYellow
-    } else {
-        Write-Host "[+] Resources found for the current user `r`n" -ForegroundColor Green
-        $scope = $resources | Select-Object -ExpandProperty ResourceId
+        $rolesDict = @{}
+        $actionsDict = @{}
 
-        Write-Host "[*] Checking for role definition`r`n"
-        Write-Host "[*] Checking the actions that can be performed on resources by the current user `r`n"
-        Write-Host "Please Wait ... `r`n"
+        $resources = Get-AzResource
+        
+        if ($null -eq $resources) {
+            Write-Host "[-] No resources found for the current user `r`n" -ForegroundColor DarkYellow
+        } else {
+            Write-Host "[+] Resources found for the current user `r`n" -ForegroundColor Green
+            $scope = $resources | Select-Object -ExpandProperty ResourceId
 
-        foreach ($resource in $resources) {
+            Write-Host "[*] Checking for role definition`r`n"
+            Write-Host "[*] Checking the actions that can be performed on resources by the current user `r`n"
+            Write-Host "Please Wait ... `r`n"
 
-            $scope = $resource.ResourceId
+            foreach ($resource in $resources) {
 
-            $roleAssignment = Get-AzRoleAssignment -Scope $scope -ObjectId $userObjectId
+                $scope = $resource.ResourceId
 
-            #iterate over resource role
-            foreach ($role in $roleAssignment.RoleDefinitionName){
+                $roleAssignment = Get-AzRoleAssignment -Scope $scope -ObjectId $userObjectId
 
-                if (-not $rolesDict.ContainsKey($($resource.Name)) -or $rolesDict[$($resource.Name)] -eq $null -or $rolesDict[$($resource.Name)].Count -eq 0) {
-                    # Initialize the key with an empty ArrayList
-                    $rolesDict[$($resource.Name)] = [System.Collections.ArrayList]::new()
-                }
-                
-                $rolesDict[$($resource.Name)].Add($role) > $null
-            }
+                #iterate over resource role
+                foreach ($role in $roleAssignment.RoleDefinitionName){
 
-            #iterate over role action
-            foreach ($id in $($roleAssignment.RoleDefinitionId)){
-
-                $roleDef = Get-AzRoleDefinition -Id $id
-
-                
-                if (-not $actionsDict.ContainsKey($($resource.Name)) -or $actionsDict[$($resource.Name)] -eq $null -or $actionsDict[$($resource.Name)].Count -eq 0) {
-                    # Initialize the key with an empty ArrayList
-                    $actionsDict[$($resource.Name)] = [System.Collections.ArrayList]::new()
+                    if (-not $rolesDict.ContainsKey($($resource.Name)) -or $rolesDict[$($resource.Name)] -eq $null -or $rolesDict[$($resource.Name)].Count -eq 0) {
+                        # Initialize the key with an empty ArrayList
+                        $rolesDict[$($resource.Name)] = [System.Collections.ArrayList]::new()
+                    }
+                    
+                    $rolesDict[$($resource.Name)].Add($role) > $null
                 }
 
+                #iterate over role action
+                foreach ($id in $($roleAssignment.RoleDefinitionId)){
 
-                $actionsDict[$($resource.Name)].Add($($roleDef.Actions)) > $null
-            }
+                    $roleDef = Get-AzRoleDefinition -Id $id
 
-            }
+                    
+                    if (-not $actionsDict.ContainsKey($($resource.Name)) -or $actionsDict[$($resource.Name)] -eq $null -or $actionsDict[$($resource.Name)].Count -eq 0) {
+                        # Initialize the key with an empty ArrayList
+                        $actionsDict[$($resource.Name)] = [System.Collections.ArrayList]::new()
+                    }
 
-    Write-Host "[+] Result of roles found on resources"
-    # Call the DisplayDict function and store results
-    $rolesOutput = DisplayDict -dict $rolesDict -nameColumn1 "Resource" -nameColumn2 "Role"
-    $rolesOutput
 
-    Write-Host "[+] Result of actions that the current user can perform on resources `r`n" -ForegroundColor Green
+                    $actionsDict[$($resource.Name)].Add($($roleDef.Actions)) > $null
+                }
 
-    $actionsOutput = DisplayDict -dict $actionsDict -nameColumn1 "Resource" -nameColumn2 "Actions"
-    $actionsOutput
-    }
+                }
 
-    } catch {
-        Write-Error $_.Exception.Message
-        Write-Error $_.InvocationInfo.PositionMessage
-        Write-Error $_.InvocationInfo.ScriptLineNumber
-        Write-Error $_.InvocationInfo.OffsetInLine
-        Write-Error $_.InvocationInfo.Line
-        Write-Error $_.InvocationInfo.PipelineLength
-        Write-Error $_.InvocationInfo.MyCommand.Name
-        Write-Error $_.InvocationInfo.MyCommand.CommandType
-    }
+        Write-Host "[+] Result of roles found on resources"
+        # Call the DisplayDict function and store results
+        $rolesOutput = DisplayDict -dict $rolesDict -nameColumn1 "Resource" -nameColumn2 "Role"
+        $rolesOutput
+
+        Write-Host "[+] Result of actions that the current user can perform on resources `r`n" -ForegroundColor Green
+
+        $actionsOutput = DisplayDict -dict $actionsDict -nameColumn1 "Resource" -nameColumn2 "Actions"
+        $actionsOutput
+        }
+
+        } catch {
+            Write-Error $_.Exception.Message
+            Write-Error $_.InvocationInfo.PositionMessage
+            Write-Error $_.InvocationInfo.ScriptLineNumber
+            Write-Error $_.InvocationInfo.OffsetInLine
+            Write-Error $_.InvocationInfo.Line
+            Write-Error $_.InvocationInfo.PipelineLength
+            Write-Error $_.InvocationInfo.MyCommand.Name
+            Write-Error $_.InvocationInfo.MyCommand.CommandType
+        }
 
 }
 
@@ -168,9 +169,6 @@ Function enumKeyVaults{
 }
 
 Function enumAppServices{
-    Write-Host "------------------"
-    Write-Host "|Web App Services|"
-    Write-Host "------------------`r`n"
 
     Write-Host "[*] Enumeration of web app services`r`n"
 
@@ -271,7 +269,7 @@ Function findWebAppConnectionStrings{
         # Display environment variables if they exist
         if ($envHttpResponse.properties) {
             Write-Host "[+] Environment Variable(s) (App Settings) found ! some credentials may be stored in this variables" -ForegroundColor Green
-            $envHttpResponse.properties
+            Write-Host "$($envHttpResponse.properties)"
         } else {
             Write-Host "[-] No environment variables found in App Settings." -ForegroundColor DarkYellow
         }
@@ -279,7 +277,7 @@ Function findWebAppConnectionStrings{
         if ($conectionStringHttpResponse.properties) {
             # Display connection strings if exist
             Write-Host "[+] Connection string(s) found ! some credentials may be stored in this variables" -ForegroundColor Green
-            $conectionStringHttpResponse.properties
+            Write-Host "$($conectionStringHttpResponse.properties.secret)"
         } else {
             Write-Host "[-] No connection strings found." -ForegroundColor DarkYellow
         }
@@ -311,29 +309,75 @@ Function checkWebAppSSH{
         Write-Host "[*] If the app service is up and have been deployed through direct code and NOT as docker container, you can try to open SSH session with az cli :"
         Write-Host "    - az webapp create-remote-connection --resource-group <resourceGroup> --name $webAppName" 
     } else {
-        Write-Host "[-] User does not have the necessary permissions to create an SSH session on the web app service." -ForegroundColor DarkYellow
+        Write-Host "[-] User does not have the necessary permissions to create an SSH session on the web app service."`r`n -ForegroundColor DarkYellow
     }
 }
 
 Function enumStorageAccounts{
+
     Write-Host "[*] Enumeration of Storage Accounts`r`n" -ForegroundColor Green
 
     #Get storage accounts
     $storageAccounts = Get-AzStorageAccount
-    if ($null -eq $storageAccount) {
+    $storageAccountsNames = $storageAccounts.StorageAccountName
+
+    if ($null -eq $storageAccounts) {
         Write-Host "[-] No storage account accessible for the current user found`r`n" -ForegroundColor DarkYellow
     }
     else{
         Write-Host "[+] Storage account(s) found" -ForegroundColor Green
-        Write-Host "$($storageAccounts.StorageAccountName)`r`n"
+        Write-Host "$storageAccountsNames`r`n"
 
 
         foreach ($storageAccount in $storageAccounts) {
-            Write-Host "[*]Checking storage account : $($storageAccount.StorageAccountName)`r`n"
 
-            Write-Host "[*] We found the following blob endpoint URL :"
-            $blobEndpoint = $storageAccount.Context.BlobEndPoint
-            Write-Host "$blobEndpoint`r`n"
+            $storageAccountName = $storageAccount.StorageAccountName
+            $storageAccountId = $storageAccount.Id
+            Write-Host "[*]Checking storage account : $storageAccountName`r`n"
+
+            # Define the URI to list containers
+            $uri = "https://management.azure.com$storageAccountId/blobServices/default/containers?api-version=2019-06-01"
+
+            # Here we use the Azure Resource Manager (ARM) APIs to list the containers 
+            # Because if our user have only reader role assignement we won't be able to list the storage account keys
+            # So the Get-AzStorageContainer command will return an error about access rights
+            $response = managementApiHttpRequest -URI $uri -method "GET"
+
+            # Check the response and print container names
+            if ($response) {
+                Write-Host "Containers:"
+                $response.value | ForEach-Object {
+                    $containerName = $_.name
+                    Write-Host "- $containerName"
+
+                # Check the access level of each container
+                $containerAccessUri = "https://management.azure.com$storageAccountId/blobServices/default/containers/$($containerName)?api-version=2019-06-01"
+
+                $containerProperties = managementApiHttpRequest -URI $containerAccessUri -method "GET"
+
+                if ($containerProperties) {
+                    $accessLevel = $containerProperties.properties.publicAccess
+                    if ($accessLevel -eq "Container" -Or $accessLevel -eq "Blob") {
+                        Write-Host "[+] The content of this container can be accessed anonymously" -ForegroundColor Green
+                        Write-Host "Access Level: $accessLevel"
+
+                        #Create directory to store the anonymous blob content found
+                        if (!(Test-Path -Path .\$($subscriptionId)_Az_Public_Blob_Content)) {
+                             $blobDir = New-Item -Path .\$($subscriptionId)_Az_Public_Blob_Content -ItemType Directory
+                        }
+                        ListPublicContainerBlobs -storageAccountName $storageAccountName -containerName $containerName
+
+                    } else {
+                       Write-Host "[-] The access to the container content is restricted"`r`n -ForegroundColor DarkYellow
+                    }
+                    
+                } else {
+                    Write-Host "Could not retrieve properties for container: $containerName"
+                }
+            }
+            } else {
+                Write-Host "No container found"
+            }
 
             findBlobs -storageAccount $storageAccount
             
@@ -342,6 +386,8 @@ Function enumStorageAccounts{
     }
 
 }
+
+
 
 Function enumFunctionApps{
     Write-Host "[*] Enumeration of function apps`r`n" -ForegroundColor Green
@@ -386,7 +432,7 @@ Function findBlobs{
         }
 
     } else {
-        Write-Host "[-] User does not have the necessary permissions to access the content of the storage account." -ForegroundColor DarkYellow
+        Write-Host "[-] User does not have the necessary permissions to access the content of the storage account."`r`n -ForegroundColor DarkYellow
     }
 
 }
@@ -418,6 +464,69 @@ Function readBlobs{
         Write-Host "[-] No blobs found"
     }
 }
+
+Function ListPublicContainerBlobs {
+    param (
+        [string]$storageAccountName,
+        [string]$containerName
+    )
+
+    # Construct the URL to list blobs in the container
+    $containerUrl = "https://$storageAccountName.blob.core.windows.net/$($containerName)?restype=container&comp=list"
+
+    try {
+        # Note that in all the program I am using Invoke-RestMethod for Http request
+        # But in this case I am using System.Net.WebRequest because I encountered issue to parse XML with Invoke-RestMethod
+        $request = [System.Net.WebRequest]::Create($containerUrl)
+        $request.Method = "GET"
+
+        # Get the response
+        $response = $request.GetResponse()
+
+        # Read the response content
+        $responseStream = $response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($responseStream)
+        $responseContent = $reader.ReadToEnd()
+
+        [xml]$result = $responseContent
+        $blobs = $result.EnumerationResults.Blobs.Blob
+
+        # Clean up resources
+        $response.Close()
+        $reader.Close()
+
+
+    } catch {
+        Write-Host "Error listing blobs: $_"
+    }
+
+
+
+    # Check if the response contains blobs
+    if ($blobs) {
+        Write-Host "[*] Blobs in container '$containerName':"`r`n
+        $blobs | ForEach-Object {
+            $blobName = $blobs.Name
+            Write-Host "- $($blobName)"
+        try {
+            # Construct the URL
+            $blobUrl = "https://$storageAccountName.blob.core.windows.net/$containerName/$blobName"
+ 
+            # Print the URL
+            Write-Host "[*] Trying to download the blob at the following URL: $blobUrl"
+
+            # Download the blob content
+            Invoke-WebRequest -Uri $blobUrl -OutFile ".\$($subscriptionId)_Az_Public_Blob_Content\$blobName"
+            Write-Host "[+] Blob downloaded successfully: .\$($subscriptionId)_Az_Public_Blob_Content\$blobName"`r`n -ForegroundColor Green
+        } catch {
+            Write-Host "Error downloading blob: $_"
+        }
+        }
+    } else {
+        Write-Host "No blobs found or failed to list blobs."
+    }
+}
+
 
 Function checkPermission{
     param (
@@ -460,7 +569,7 @@ Function managementApiHttpRequest{
     try{
         $response = Invoke-RestMethod @RequestParams 
     } catch {
-        Write-Output "Error fetching app settings: $_"
+        Write-Host "Error fetching app settings: $_"
     }
 
     return $response
@@ -504,6 +613,29 @@ Function DisplayDict{
     return $displayDict
 }
 
+Function Banner{
+    param (
+        [string]$title
+    )
+
+    # Calculate the space padding required
+    $paddingSize = 52 - 6 - $title.Length  # 6 is the length of "|    " and "|"
+
+    # Ensure the padding size is non-negative
+    if ($paddingSize -lt 0) {
+        Write-Error "Title is too long to fit within the banner."
+        exit
+    }
+    $banner = "|    $title" + (" " * $paddingSize) + "|"
+    Write-Host " __________________________________________________"
+    Write-Host "|                                                  |"
+    Write-Host "$banner"
+    Write-Host "|__________________________________________________|`r`n"
+
+    Write-Host "------------------`r`n"
+}
+
+
 #Add auth MFA + simple auth option 
 #Connect-AzAccount -Credential $creds 
 #or
@@ -532,13 +664,16 @@ foreach ($subscription in $subscriptions) {
     Write-Host "[+] Let's take a look to the $($subscription.Name) resources `r`n" -ForegroundColor Green
      
     Set-AzContext -SubscriptionId $subscriptionId
-
-    enumStorageAccounts
+    Banner -title "Az Resources"
 
     Find-Resources-Groups
     Find-Resources
 
+    Banner -title "Web App Services"
     enumAppServices
+
+    Banner -title "Storage Accounts"
+    enumStorageAccounts
     
 
 }
