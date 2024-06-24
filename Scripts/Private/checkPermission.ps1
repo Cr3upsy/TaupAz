@@ -4,15 +4,16 @@
 Function checkPermission{
     param (
         [array]$permissions,
-        [psobject]$roleAssignments
+        [psobject]$roleAssignments,
+        [string]$actionField = "Actions"  # Optional parameter with default value
         )
 
     $hasPermission = $false
 
     foreach ($roleAssignment in $roleAssignments) {
         $roleDefinition = Get-AzRoleDefinition -Id $roleAssignment.RoleDefinitionId
-        foreach ($action in $requiredActions) {
-            if ($roleDefinition.Actions -contains $action) {
+        foreach ($action in $permissions) {
+            if ($roleDefinition.$actionField -contains $action) {
                 $hasPermission = $true
                 break
             }

@@ -14,7 +14,7 @@ Function findBlobs{
         "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"
     )
 
-    # Get role assignments for the user on the web app resource
+    # Get role assignments for the user on the az storage resource
     $roleAssignments = Get-AzRoleAssignment -ObjectId $userObjectId -Scope $storageAccount.Id
 
     # Check if the user has a role that allows access to connection strings

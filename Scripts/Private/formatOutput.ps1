@@ -1,3 +1,17 @@
+Function mainBanner{
+    $filePath = "$PSScriptRoot\..\..\Resources\banner.txt"
+    
+    # Check if the file exists
+    if (Test-Path $filePath) {
+        # Read the content of the file
+        $bannerContent = Get-Content $filePath
+        # Output the content to the terminal
+        Write-Output $bannerContent
+    } else {
+        Write-Error "File not found: $filePath"
+    }
+}
+
 Function Banner{
     param (
         [string]$title

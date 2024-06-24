@@ -2,10 +2,10 @@
 Import-Module "$PSScriptRoot/Modules/findAzResources.psm1" -Force
 Import-Module "$PSScriptRoot/Modules/enumAzWebApps.psm1" -Force
 Import-Module "$PSScriptRoot/Modules/enumAzStorages.psm1" -Force
+Import-Module "$PSScriptRoot/Modules/enumAzKeyVaults.psm1" -Force
 
 #Import functions
-. "$PSScriptRoot/Scripts/Private/formatOutput.ps1"
-
+. "$PSScriptRoot/Scripts/Private/formatOutput.ps1" -Force
 
 function Connect-AzAccountWithCredential {
     [CmdletBinding()]
@@ -50,11 +50,12 @@ Function enumFunctionApps{
 
 }
 
+mainBanner
 
 #Add auth MFA + simple auth option 
 #Connect-AzAccount -Credential $creds 
 #or
-#Connect-AzAccount -TenantId $tenantId 
+#Connect-AzAccount -TenantId $tenantId -AccountId <email>
 
 $subscriptions = Get-AzSubscription
 
@@ -89,6 +90,9 @@ foreach ($subscription in $subscriptions) {
 
     Banner -title "Storage Accounts"
     enumStorageAccounts -subscriptionId $subscriptionId
+
+    Banner -title "Key Vaults"
+    enumKeyVaults -userObjectId $userObjectId -subscriptionId $subscriptionId
     
 
 }

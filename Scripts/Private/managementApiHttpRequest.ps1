@@ -1,10 +1,16 @@
 Function managementApiHttpRequest{
         param (
         [string]$URI,
-        [string]$method
+        [string]$method,
+        [string]$scope
     )
+    if($scope){
+        $Token = (Get-AzAccessToken -resource $scope).Token
+    }else{
+        $Token = (Get-AzAccessToken).Token       
+    }
 
-    $Token = (Get-AzAccessToken).Token
+
 
     # Define request parameters
     $RequestParams = @{
