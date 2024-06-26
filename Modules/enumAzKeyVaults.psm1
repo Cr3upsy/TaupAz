@@ -98,13 +98,13 @@ Function GetPermission{
                 getSecrets -vaultName $VaultName
                 
             }elseif($hasRbacPermission){
-
+                Write-Host "===================================================="
                 Write-Host "[+] The user don't have the right to see secret, keys, or certificates, however the current user seems to have Owner role assignment on this key vault, this mean that he can change RBAC to add to himself the role of Key Vault administrator"
                 Write-Host " - To do this you can run the following command, and relaunch the script to extract secret"
                 Write-Host "    |-> az role assignment create --assignee 6d317b27-9d6b-490b-bec9-8c0fe09118b0 --role 'Key Vault Administrator' --scope /subscriptions/$subscriptionId/resourceGroups/$($keyVault.ResourceGroupName)/providers/Microsoft.KeyVault/vaults/$($VaultName)"
                 Write-Host "/!\ After running this command it can tae some times before the propagation of the role"
-                Write-Host "If it doesn't work, check in details the role assignement that you have on the resource.
-            
+                Write-Host "- If it doesn't work, check in details the role assignement that you have on this resource."
+                Write-Host "===================================================="
             } else {
                 Write-Host "[-] User does not have the necessary permissions to access this key vault."`r`n -ForegroundColor DarkYellow
             }

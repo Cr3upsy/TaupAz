@@ -3,6 +3,7 @@ Import-Module "$PSScriptRoot/Modules/findAzResources.psm1" -Force
 Import-Module "$PSScriptRoot/Modules/enumAzWebApps.psm1" -Force
 Import-Module "$PSScriptRoot/Modules/enumAzStorages.psm1" -Force
 Import-Module "$PSScriptRoot/Modules/enumAzKeyVaults.psm1" -Force
+Import-Module "$PSScriptRoot/Modules/enumAzVMs.psm1" -Force
 
 #Import functions
 . "$PSScriptRoot/Scripts/Private/formatOutput.ps1" -Force
@@ -29,25 +30,6 @@ function Connect-AzAccountWithCredential {
         Write-Error $_.InvocationInfo.MyCommand.Name
         Write-Error $_.InvocationInfo.MyCommand.CommandType
     }
-}
-
-
-Function enumVM{
-    Write-Host "[*] Enumeration of VMs where the current user has at least the Reader role`r`n" -ForegroundColor Green
-    Get-AzVM
-}
-
-Function enumKeyVaults{
-    Write-Host "[*] Enumeration of readable keyvaults for the current user`r`n" -ForegroundColor Green
-    Get-AzKeyvault
-
-}
-
-
-Function enumFunctionApps{
-    Write-Host "[*] Enumeration of function apps`r`n" -ForegroundColor Green
-    Get-AzFunctionApp
-
 }
 
 mainBanner
@@ -93,6 +75,9 @@ foreach ($subscription in $subscriptions) {
 
     Banner -title "Key Vaults"
     enumKeyVaults -userObjectId $userObjectId -subscriptionId $subscriptionId
+
+    Banner -title "VMs"
+    enumVMs -subscriptionId $subscriptionId
     
 
 }
