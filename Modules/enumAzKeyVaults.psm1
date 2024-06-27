@@ -69,7 +69,7 @@ Function GetPermission{
 
                 $access = "full"
 
-                Write-Host "[+] The user have full vault access and can extract keys, certificates, and secrets"
+                Write-Host "[+] The user have full vault access and can extract keys, certificates, and secrets" -ForegroundColor Green
                 getSecrets -vaultName $VaultName
                 getKeys -vaultName $VaultName -subscriptionId $subscriptionId
                 getCertificates -vaultName $VaultName -subscriptionId $subscriptionId -access $access
@@ -77,22 +77,22 @@ Function GetPermission{
             }elseif($hasCertificatesAccess) {
                 $access = "limited"
 
-                Write-Host "[+] The user have only access to certificates management (read / add /remove)"
+                Write-Host "[+] The user have only access to certificates management (read / add /remove)" -ForegroundColor Green
                 getCertificates -vaultName $VaultName -subscriptionId $subscriptionId -access $access
                 
             }elseif($hasKeysAccess) {
 
-                Write-Host "[+] The user have only access to keys management (read / add /remove)"
+                Write-Host "[+] The user have only access to keys management (read / add /remove)" -ForegroundColor Green
                 getKeys -vaultName $VaultName -subscriptionId $subscriptionId
             
             }elseif($hasSecretAccess) {
 
-                Write-Host "[+] The user have only access to secrets (read / add /remove)"
+                Write-Host "[+] The user have only access to secrets (read / add /remove)" -ForegroundColor Green
                 getSecrets -vaultName $VaultName
  
             }elseif($hasSecretReadAccess) {
 
-                Write-Host "[+] The user have read only access to secrets"
+                Write-Host "[+] The user have read only access to secrets" -ForegroundColor Green
                 getSecrets -vaultName $VaultName
                 
             }elseif($hasRbacPermission){
@@ -140,7 +140,7 @@ Function getKeys{
                 }
         }
     }else{
-        Write-host "[-] No keys found"
+        Write-host "[-] No keys found" -ForegroundColor DarkYellow
     }
 }
 
@@ -187,7 +187,7 @@ Function getCertificates{
         }
     }
     }else{
-        Write-host "[-] No Certs found"
+        Write-host "[-] No Certs found" -ForegroundColor DarkYellow
     }
 }
 
@@ -211,6 +211,6 @@ Function getSecrets{
             }
         }
     }else{
-        Write-host "[-] No Creds found"
+        Write-host "[-] No Creds found" -ForegroundColor DarkYellow
     }
 }
