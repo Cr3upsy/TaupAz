@@ -26,15 +26,14 @@ Function findWebAppGitCreds{
                         Write-Host " - Password: $password"
                     }
                 } else {
-                    Write-Host "[-] No credentials are exposed." -ForegroundColor DarkYellow
+                    Write-Host "[-] No credentials are exposed.`r`n" -ForegroundColor DarkYellow
                 }
             } else {
-                Write-Host "[-] No GitHub project is linked to this web app." -ForegroundColor DarkYellow
+                Write-Host "[-] No GitHub project is linked to this web app.`r`n" -ForegroundColor DarkYellow
             }
 
-            Write-Host "------------------------"
         } else {
-                Write-Host "[-] No GitHub project is linked to this web app." -ForegroundColor DarkYellow
+                Write-Host "[-] No GitHub project is linked to this web app.`r`n" -ForegroundColor DarkYellow
         }
 }
 
@@ -62,7 +61,7 @@ Function findWebAppConnectionStrings{
 
     # If user have sufficient permission, check env var and connection strings
     if ($hasPermission) {
-        Write-Host "[+] User has the required permissions to access connection strings and env variables." -ForegroundColor Green
+        Write-Host "[+] User has the required permissions to access connection strings and env variables.`r`n" -ForegroundColor Green
 
         $envURI = "https://management.azure.com$webAppResourceId/config/appsettings/list?api-version=2021-02-01"
         $conectionStringURI = "https://management.azure.com$webAppResourceId/config/connectionstrings/list?api-version=2021-02-01"
@@ -73,7 +72,7 @@ Function findWebAppConnectionStrings{
 
         # Display environment variables if they exist
         if ($envHttpResponse.properties) {
-            Write-Host "[+] Environment Variable(s) (App Settings) found ! some credentials may be stored in this variables" -ForegroundColor Green
+            Write-Host "[+] Environment Variable(s) (App Settings) found ! some credentials may be stored in this variables`r`n" -ForegroundColor Green
             Write-Host "$($envHttpResponse.properties)"
         } else {
             Write-Host "[-] No environment variables found in App Settings." -ForegroundColor DarkYellow

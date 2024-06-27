@@ -1,5 +1,5 @@
 ﻿# Import modules
-Import-Module "$PSScriptRoot/Modules/findAzResources.psm1" -Force
+Import-Module "$PSScriptRoot\Modules\enumAzResources.psm1" -Force
 Import-Module "$PSScriptRoot/Modules/enumAzWebApps.psm1" -Force
 Import-Module "$PSScriptRoot/Modules/enumAzStorages.psm1" -Force
 Import-Module "$PSScriptRoot/Modules/enumAzKeyVaults.psm1" -Force
@@ -21,14 +21,7 @@ function Connect-AzAccountWithCredential {
         $subscription = $accountInfo[0].SubscriptionName
         Write-Host "[+] Authentication succeed  `r`n" -ForegroundColor Green
     } catch {
-        Write-Error $_.Exception.Message
-        Write-Error $_.InvocationInfo.PositionMessage
-        Write-Error $_.InvocationInfo.ScriptLineNumber
-        Write-Error $_.InvocationInfo.OffsetInLine
-        Write-Error $_.InvocationInfo.Line
-        Write-Error $_.InvocationInfo.PipelineLength
-        Write-Error $_.InvocationInfo.MyCommand.Name
-        Write-Error $_.InvocationInfo.MyCommand.CommandType
+        Write-Error $_
     }
 }
 
@@ -40,6 +33,7 @@ mainBanner
 #Connect-AzAccount -TenantId $tenantId -AccountId <email>
 
 $subscriptions = Get-AzSubscription
+$exploit = $false
 
 # Get the Object ID of the current user
 $userObjectId = (Get-AzContext).Account.ExtendedProperties.HomeAccountId.Split('.')[0]
@@ -64,8 +58,7 @@ foreach ($subscription in $subscriptions) {
     Set-AzContext -SubscriptionId $subscriptionId
     Banner -title "Az Resources"
 
-    findResourcesGroups -subscriptionId $subscriptionId -userObjectId $userObjectId
-    findResources -subscriptionId $subscriptionId -userObjectId $userObjectId
+    enumResources -userObjectId $userObjectId
 
     Banner -title "Web App Services"
     enumAppServices -subscriptionId $subscriptionId
@@ -77,7 +70,7 @@ foreach ($subscription in $subscriptions) {
     enumKeyVaults -userObjectId $userObjectId -subscriptionId $subscriptionId
 
     Banner -title "VMs"
-    enumVMs -subscriptionId $subscriptionId
+    enumVMs -userObjectId $userObjectId -exploit $exploit
     
 
 }

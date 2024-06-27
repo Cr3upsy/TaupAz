@@ -25,7 +25,7 @@ Function enumVms{
         if($vmUp){
             Write-Host "[*] VM(s) up found, let's check to get some info`r`n"
             foreach($vm in $vmUp){
-                $vmInfos = getInfo -vm $vm
+                $vmInfos = getInfo -vm $vm -userObjectId $userObjectId
                 if ($($vmInfos.Permission) -eq $true -and $exploit -eq $true) {
                    addUser -os $vmInfos.Os -vmName $vmInfos.Name -resourceGroupName $($vmUp.ResourceGroupName)     
                 }
@@ -51,7 +51,8 @@ Function enumVms{
 
 Function getInfo{
     param(
-        [psobject]$vm
+        [psobject]$vm,
+        [string]$userObjectId
     )
     $vmInfos = @()
     $vmName = $vm.Name
@@ -76,7 +77,7 @@ Function getInfo{
 
         if($hasRunCommandPermission){
             $permission = $true
-            Write-Host "[*] The user have sufficient rights to run command on the VM"
+            Write-Host "[+] The user have sufficient rights to run command on the VM, this can be exploit to add new user" -ForegroundColor Green
         } else{
            $permission = $false 
            #check enventually if user have login right to perform some actions on the VM

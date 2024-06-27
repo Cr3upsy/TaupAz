@@ -43,7 +43,7 @@ Function GetPermission{
     param(
         [psobject]$keyVaults
     )
-        # Get role assignments for the user on the web app resource
+        # Get role assignments for the user on the key vault resources
         $roleAssignments = Get-AzRoleAssignment -ObjectId $userObjectId -Scope $keyVaults.ResourceId
 
         #Unlike the other permission controls, which concern the 'action' field, this time it's the 'DataActions' attribute which is controlled.
@@ -64,8 +64,6 @@ Function GetPermission{
             $hasKeysAccess = checkPermission -permissions $keysAccessAction -roleAssignments $roleAssignments -actionField $actionField
             $hasSecretAccess = checkPermission -permissions $secretAccessAction -roleAssignments $roleAssignments -actionField $actionField
             $hasSecretReadAccess = checkPermission -permissions $secretReadOnlyAction -roleAssignments $roleAssignments -actionField $actionField
-
-            Write-Host "$hasRbacPermission $hasFullVaultAccess $hasCertificatesAccess $hasKeysAccess $hasSecretAccess $hasSecretReadAccess"
 
             if($hasFullVaultAccess) {
 
@@ -102,7 +100,7 @@ Function GetPermission{
                 Write-Host "[+] The user don't have the right to see secret, keys, or certificates, however the current user seems to have Owner role assignment on this key vault, this mean that he can change RBAC to add to himself the role of Key Vault administrator"
                 Write-Host " - To do this you can run the following command, and relaunch the script to extract secret"
                 Write-Host "    |-> az role assignment create --assignee 6d317b27-9d6b-490b-bec9-8c0fe09118b0 --role 'Key Vault Administrator' --scope /subscriptions/$subscriptionId/resourceGroups/$($keyVault.ResourceGroupName)/providers/Microsoft.KeyVault/vaults/$($VaultName)"
-                Write-Host "/!\ After running this command it can tae some times before the propagation of the role"
+                Write-Host "/!\ After running this command it can take some times before the propagation of the role"
                 Write-Host "- If it doesn't work, check in details the role assignement that you have on this resource."
                 Write-Host "===================================================="
             } else {
@@ -119,26 +117,30 @@ Function getKeys{
         )
     # Get public keys from the vault
     $vaultKeys = Get-AzKeyVaultKey -VaultName $vaultName
-    $vaultKeys | ForEach-Object {
-        $vaultKeyName = $_.Name
-        Write-Host -NoNewline "[+ Key Found !]" -ForegroundColor Green
-        Write-Host " Name : $($vaultKeyName) "
-        try {
-            $path = "$PSScriptRoot\..\$($subscriptionId)_Az_Public_Keys\"
-            $fileName = "$($vaultKeyName)_pubkey.pem"
+    if($vaultKeys){
+        $vaultKeys | ForEach-Object {
+            $vaultKeyName = $_.Name
+            Write-Host -NoNewline "[+ Key Found !]" -ForegroundColor Green
+            Write-Host " Name : $($vaultKeyName) "
+            try {
+                $path = "$PSScriptRoot\..\$($subscriptionId)_Az_Public_Keys\"
+                $fileName = "$($vaultKeyName)_pubkey.pem"
 
-            #Create directory to store the public keys found
-            if (!(Test-Path -Path $path)) {
-                 New-Item -Path $path -ItemType Directory
-            }
-            $keyData = Get-AzKeyVaultKey -VaultName $vaultName -KeyName $vaultKeyName -OutFile "$($path)$($fileName)"
-     
-            Write-Host "[+] Public key successfully downloaded at the following path: $($path)$($fileName)"`r`n -ForegroundColor Green
+                #Create directory to store the public keys found
+                if (!(Test-Path -Path $path)) {
+                     New-Item -Path $path -ItemType Directory
+                }
+                $keyData = Get-AzKeyVaultKey -VaultName $vaultName -KeyName $vaultKeyName -OutFile "$($path)$($fileName)"
+         
+                Write-Host "[+] Public key successfully downloaded at the following path: $($path)$($fileName)"`r`n -ForegroundColor Green
 
-            } catch {
+                } catch {
 
-                    Write-Error "Error to during public key download: $_"
-            }
+                        Write-Error "Error to during public key download: $_"
+                }
+        }
+    }else{
+        Write-host "[-] No keys found"
     }
 }
 
@@ -150,6 +152,7 @@ Function getCertificates{
         )
     # Get secrets names from the vault
     $vaultCerts = Get-AzKeyVaultCertificate -VaultName $vaultName
+    if($vaultCerts){
     $vaultCerts | ForEach-Object {
         $vaultCertName = $_.Name
         Write-Host -NoNewline "[+ Certificate Found !]" -ForegroundColor Green
@@ -183,6 +186,9 @@ Function getCertificates{
             Write-Error "Error to during certificate download: $_"
         }
     }
+    }else{
+        Write-host "[-] No Certs found"
+    }
 }
 
 Function getSecrets{
@@ -191,16 +197,20 @@ Function getSecrets{
         )
     # Get secrets names from the vault
     $vaultSecrets = Get-AzKeyVaultSecret -VaultName $vaultName
-    $vaultSecrets | ForEach-Object {
-        $vaultSecretsName = $_.Name
-        try {
-            # Get secret values
-            $secret = Get-AzKeyVaultSecret -VaultName $vaultName -Name $vaultSecretsName -AsPlainText
-            Write-Host -NoNewline "[+ Secret Found !] " -ForegroundColor Green
-            Write-Host -NoNewline "$($vaultSecretsName) : $secret `r`n" 
+    if($vaultSecrets){
+        $vaultSecrets | ForEach-Object {
+            $vaultSecretsName = $_.Name
+            try {
+                # Get secret values
+                $secret = Get-AzKeyVaultSecret -VaultName $vaultName -Name $vaultSecretsName -AsPlainText
+                Write-Host -NoNewline "[+ Secret Found !] " -ForegroundColor Green
+                Write-Host -NoNewline "$($vaultSecretsName) : $secret `r`n" 
 
-        }catch {
-            Write-Host "Error to retrieve secret $_" 
+            }catch {
+                Write-Host "Error to retrieve secret $_" 
+            }
         }
+    }else{
+        Write-host "[-] No Creds found"
     }
 }
