@@ -88,6 +88,8 @@ if (-not ($enumStorages.IsPresent -or $enumVaults.IsPresent -or $enumVMs.IsPrese
     $enumResources = $true
 }
 
+mainBanner
+
 # Check Azure connection
 Test-AzureConnection
 

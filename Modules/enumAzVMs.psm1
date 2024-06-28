@@ -33,7 +33,7 @@ Function enumVms{
             }
 
         
-        } elseif(vmDown){
+        } elseif($vmDown){
             Write-Host "[-] The following VM(s) is/are downs : `r`n" -ForegroundColor DarkYellow
             Write-Host "$($vmsName) `r`n" -ForegroundColor DarkYellow
         }else{
