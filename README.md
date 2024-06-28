@@ -88,7 +88,7 @@ If no option is specified, all enumeration modules will be launched.
 
 ## To Do
 
-```markdown
+
 - [ ] Handle case where key vaults certificates are deleted by not purges
 - [ ] Handle case where access control to the key vault is not carried out by RBAC
 - [ ] Check if user can start a Shutdown VM
@@ -96,8 +96,6 @@ If no option is specified, all enumeration modules will be launched.
 - [ ] Check WinRM access
 - [ ] Exploit SSH access
 - [ ] Exploit WinRM access
-```
-
 
 
 ## Advisory
